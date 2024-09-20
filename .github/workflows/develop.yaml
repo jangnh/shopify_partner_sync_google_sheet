@@ -1,0 +1,50 @@
+name: develop
+run-name: Deploy ${{ github.ref_name }}
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+  packages: read
+env:
+  AR_REPO: shopify-partner-sync-statistic
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    name: build
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout
+        with:
+          ref: ${{ github.ref_name }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.SERVICE_ACCOUNT }}
+          token_format: 'access_token'
+      - uses: 'docker/login-action@v3'
+        name: Login to Google Artifact Registry
+        id: docker_login
+        with:
+          registry: ${{ vars.CONTAINER_REGISTRY }}
+          username: 'oauth2accesstoken'
+          password: '${{ steps.auth.outputs.access_token }}'
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            name=${{ vars.CONTAINER_REGISTRY }}/${{ steps.auth.outputs.project_id }}/${{ env.AR_REPO }}/backend
+          tags: |
+            type=sha,enable=true,suffix=,format=short
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}

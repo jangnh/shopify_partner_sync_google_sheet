@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Go Program",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/main.go",
+            "args": [
+                "prtapi_91a476940ce8b47eb7c2b854c31ee529",
+                "gid://partners/App/14548697089",
+                "2663445",
+                "2024-05-01"
+            ]
+        }
+    ]
+}
