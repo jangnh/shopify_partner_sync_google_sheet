@@ -80,7 +80,8 @@ func main() {
 	appId := os.Args[2]
 	partnerId := os.Args[3]
 	now := time.Now()
-	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).UTC().Format(time.RFC3339)
+	gmt7 := time.FixedZone("GMT+7", 7*60*60)
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, gmt7).UTC().Format(time.RFC3339)
 	if len(os.Args) > 4 {
 		// format 2024-05-01
 		timeString := os.Args[4] + "T00:00:00+07:00"
@@ -92,7 +93,7 @@ func main() {
 	}
 
 	occurredAtMin := DateTime(startOfDay)
-	occurredAtMax := DateTime(time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 999999999, now.Location()).UTC().Format(time.RFC3339))
+	occurredAtMax := DateTime(time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 999999999, gmt7).UTC().Format(time.RFC3339))
 	fmt.Printf("startOfDay: %s, endOfDay: %s\n", occurredAtMin, occurredAtMax)
 	client := graphql.NewClient(fmt.Sprintf("https://partners.shopify.com/%s/api/2024-07/graphql.json", partnerId), nil)
 	client = client.WithRequestModifier(func(r *http.Request) {
