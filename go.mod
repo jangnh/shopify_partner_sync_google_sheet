@@ -1,6 +1,6 @@
 module github.com/jangnh/shopify_partner_sync_google_sheet
 
-go 1.23.1
+go 1.23
 
 require (
 	cloud.google.com/go/auth v0.9.3 // indirect
