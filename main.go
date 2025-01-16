@@ -153,11 +153,11 @@ func main() {
 	appEventStatistic := getAppEventStatistic(allEdges)
 	// uninstalled = current uninstalled + closed events
 	// installed = current installed + reopened events
-	for date, event := range appEventStatistic {
-		event[AppEventType("RELATIONSHIP_UNINSTALLED")] = event[AppEventType("RELATIONSHIP_UNINSTALLED")] + event[AppEventType("RELATIONSHIP_DEACTIVATED")]
-		event[AppEventType("RELATIONSHIP_INSTALLED")] = event[AppEventType("RELATIONSHIP_INSTALLED")] + event[AppEventType("RELATIONSHIP_REACTIVATED")]
-		appEventStatistic[date] = event
-	}
+	// for date, event := range appEventStatistic {
+	// 	event[AppEventType("RELATIONSHIP_UNINSTALLED")] = event[AppEventType("RELATIONSHIP_UNINSTALLED")] + event[AppEventType("RELATIONSHIP_DEACTIVATED")]
+	// 	event[AppEventType("RELATIONSHIP_INSTALLED")] = event[AppEventType("RELATIONSHIP_INSTALLED")] + event[AppEventType("RELATIONSHIP_REACTIVATED")]
+	// 	appEventStatistic[date] = event
+	// }
 	// Extract and sort dates
 	dates := make([]string, 0, len(appEventStatistic))
 	for date := range appEventStatistic {
