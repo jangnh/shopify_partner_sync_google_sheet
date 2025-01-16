@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/hasura/go-graphql-client"
@@ -19,6 +20,9 @@ type AppEventType string // RELATIONSHIP_INSTALLED,RELATIONSHIP_DEACTIVATED,RELA
 type AppEventNode struct {
 	Type       AppEventType `json:"type"`
 	OccurredAt time.Time    `json:"occurredAt"`
+	Shop       struct {
+		MyshopifyDomain string `json:"myshopifyDomain" graphql:"myshopifyDomain"`
+	} `json:"shop"`
 }
 
 type AppEventEdges struct {
@@ -58,7 +62,12 @@ func getAppEventStatistic(edges []AppEventEdges) AppEventStatisticByDate {
 		if _, ok := appEventStatistic[date]; !ok {
 			appEventStatistic[date] = make(AppEventStatistic)
 		}
-		appEventStatistic[date][edge.Node.Type]++
+		// handle RELATIONSHIP_UNINSTALLED
+		if edge.Node.Type == AppEventType("RELATIONSHIP_UNINSTALLED") && strings.Contains(edge.Node.Shop.MyshopifyDomain, "myshopify.com") {
+			appEventStatistic[date][edge.Node.Type]++
+		} else if edge.Node.Type != AppEventType("RELATIONSHIP_UNINSTALLED") {
+			appEventStatistic[date][edge.Node.Type]++
+		}
 	}
 	return appEventStatistic
 }
@@ -126,7 +135,6 @@ func main() {
 			"endCursor":     endCursor,
 			"occurredAtMin": occurredAtMin,
 		})
-		log.Printf("query app events, occurredAtMin: %s, endCursor: %v", occurredAtMin, endCursor)
 		if err != nil {
 			log.Printf("Error querying GraphQL: %v", err)
 			break
@@ -143,12 +151,19 @@ func main() {
 
 	// get app event statistic
 	appEventStatistic := getAppEventStatistic(allEdges)
-
+	// uninstalled = current uninstalled + closed events
+	// installed = current installed + reopened events
+	for date, event := range appEventStatistic {
+		event[AppEventType("RELATIONSHIP_UNINSTALLED")] = event[AppEventType("RELATIONSHIP_UNINSTALLED")] + event[AppEventType("RELATIONSHIP_DEACTIVATED")]
+		event[AppEventType("RELATIONSHIP_INSTALLED")] = event[AppEventType("RELATIONSHIP_INSTALLED")] + event[AppEventType("RELATIONSHIP_REACTIVATED")]
+		appEventStatistic[date] = event
+	}
 	// Extract and sort dates
 	dates := make([]string, 0, len(appEventStatistic))
 	for date := range appEventStatistic {
 		dates = append(dates, date)
 	}
+
 	sort.Strings(dates)
 
 	// Use sorted dates to write CSV
@@ -168,7 +183,7 @@ func main() {
 	// 		eventStatistic[AppEventType("RELATIONSHIP_UNINSTALLED")]))
 	// }
 	// fmt.Println("CSV file created successfully")
-
+	fmt.Println("appEventStatistic: ", appEventStatistic)
 	// Write CSV content to Google Sheets
 	err = writeToGoogleSheets(appQuery.App.Name, dates, appEventStatistic)
 	if err != nil {
